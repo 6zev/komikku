@@ -59,6 +59,8 @@ import eu.kanade.tachiyomi.network.PREF_DOH_NJALLA
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD101
 import eu.kanade.tachiyomi.network.PREF_DOH_QUAD9
 import eu.kanade.tachiyomi.network.PREF_DOH_SHECAN
+import eu.kanade.tachiyomi.network.byedpi.ByeDpiMode
+import eu.kanade.tachiyomi.network.byedpi.ByeDpiRuntime
 import eu.kanade.tachiyomi.source.AndroidSourceManager
 import eu.kanade.tachiyomi.ui.more.OnboardingScreen
 import eu.kanade.tachiyomi.util.CrashLogUtil
@@ -78,10 +80,13 @@ import exh.util.toAnnotatedString
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableMap
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import okhttp3.Headers
+import okhttp3.Request
 import tachiyomi.core.common.i18n.pluralStringResource
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchNonCancellable
@@ -184,6 +189,9 @@ object SettingsAdvancedScreen : SearchableSettings {
             getBackgroundActivityGroup(),
             getDataGroup(),
             getNetworkGroup(networkPreferences = networkPreferences),
+            // KMK -->
+            getByeDpiGroup(networkPreferences = networkPreferences),
+            // KMK <--
             getLibraryGroup(libraryPreferences = libraryPreferences),
             // SY -->
             getDownloadsGroup(downloadPreferences = downloadPreferences),
@@ -353,6 +361,88 @@ object SettingsAdvancedScreen : SearchableSettings {
             ),
         )
     }
+
+    // KMK -->
+    @Composable
+    private fun getByeDpiGroup(
+        networkPreferences: NetworkPreferences,
+    ): Preference.PreferenceGroup {
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+        val enabled by networkPreferences.byeDpiEnabled().collectAsState()
+
+        return Preference.PreferenceGroup(
+            title = stringResource(KMR.strings.byedpi_title),
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = networkPreferences.byeDpiEnabled(),
+                    title = stringResource(KMR.strings.byedpi_enabled),
+                    subtitle = stringResource(KMR.strings.byedpi_enabled_summary),
+                ),
+                Preference.PreferenceItem.EditTextPreference(
+                    preference = networkPreferences.byeDpiPort(),
+                    title = stringResource(KMR.strings.byedpi_port),
+                    subtitle = stringResource(KMR.strings.byedpi_port_summary),
+                    enabled = enabled,
+                    onValueChanged = { value ->
+                        val port = value.trim().toIntOrNull()
+                        if (port == null || port !in 1..65535) {
+                            context.toast(KMR.strings.byedpi_port_invalid)
+                            false
+                        } else {
+                            true
+                        }
+                    },
+                ),
+                Preference.PreferenceItem.ListPreference(
+                    preference = networkPreferences.byeDpiMode(),
+                    entries = persistentMapOf(
+                        ByeDpiMode.SNI to stringResource(KMR.strings.byedpi_mode_sni),
+                        ByeDpiMode.AGGRESSIVE to stringResource(KMR.strings.byedpi_mode_aggressive),
+                    ),
+                    title = stringResource(KMR.strings.byedpi_mode),
+                    subtitle = stringResource(KMR.strings.byedpi_mode_summary),
+                    enabled = enabled,
+                ),
+                Preference.PreferenceItem.TextPreference(
+                    title = stringResource(KMR.strings.byedpi_test),
+                    subtitle = stringResource(KMR.strings.byedpi_test_summary),
+                    enabled = enabled,
+                    onClick = {
+                        scope.launch {
+                            if (!ByeDpiRuntime.isEnabled()) {
+                                context.toast(KMR.strings.byedpi_test_not_running)
+                                return@launch
+                            }
+                            val error = runCatching {
+                                withContext(Dispatchers.IO) {
+                                    Injekt.get<NetworkHelper>().client
+                                        .newCall(Request.Builder().url(BYEDPI_TEST_URL).build())
+                                        .execute()
+                                        .use { response ->
+                                            check(response.code in 200..399) { "HTTP ${response.code}" }
+                                        }
+                                }
+                            }.exceptionOrNull()
+                            if (error == null) {
+                                context.toast(KMR.strings.byedpi_test_ok)
+                            } else {
+                                context.toast(
+                                    context.stringResource(
+                                        KMR.strings.byedpi_test_failed,
+                                        error.message ?: error.javaClass.simpleName,
+                                    ),
+                                )
+                            }
+                        }
+                    },
+                ),
+            ),
+        )
+    }
+
+    private const val BYEDPI_TEST_URL = "https://www.gstatic.com/generate_204"
+    // KMK <--
 
     @Composable
     private fun getLibraryGroup(

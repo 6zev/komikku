@@ -238,4 +238,20 @@
     <string name="pref_discord_show_download_button_summary">Displays a button to download the app</string>
     <string name="pref_discord_show_discord_button">Show Discord Button</string>
     <string name="pref_discord_show_discord_button_summary">Displays a button to join the Discord server</string>
+    <!-- ByeDPI -->
+    <string name="byedpi_title">ByeDPI (DPI bypass)</string>
+    <string name="byedpi_enabled">Enable ByeDPI</string>
+    <string name="byedpi_enabled_summary">Starts a local SOCKS5 proxy that splits TLS ClientHello packets to bypass DPI censorship. All app network traffic is routed through it while enabled.</string>
+    <string name="byedpi_port">Local proxy port</string>
+    <string name="byedpi_port_summary">Port used by the local SOCKS5 proxy (default: 1080). An ephemeral port is used if it is already taken.</string>
+    <string name="byedpi_port_invalid">Port must be between 1 and 65535</string>
+    <string name="byedpi_mode">Bypass mode</string>
+    <string name="byedpi_mode_summary">Controls how the first packet of each connection is fragmented</string>
+    <string name="byedpi_mode_sni">TLS fragmentation (recommended)</string>
+    <string name="byedpi_mode_aggressive">Aggressive (TCP split + HTTP desync)</string>
+    <string name="byedpi_test">Test connection</string>
+    <string name="byedpi_test_summary">Sends a request through the local proxy</string>
+    <string name="byedpi_test_not_running">The local proxy is not running</string>
+    <string name="byedpi_test_ok">Connection OK</string>
+    <string name="byedpi_test_failed">Connection failed: %1$s</string>
 </resources>

@@ -240,6 +240,9 @@ dependencies {
     implementation(androidx.recyclerview)
     implementation(androidx.viewpager)
     implementation(androidx.profileinstaller)
+    // KMK -->
+    implementation(androidx.webkit)
+    // KMK <--
 
     implementation(androidx.bundles.lifecycle)
 

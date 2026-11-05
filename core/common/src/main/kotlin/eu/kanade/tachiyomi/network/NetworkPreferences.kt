@@ -21,4 +21,12 @@ class NetworkPreferences(
             "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
         )
     }
+
+    // KMK -->
+    fun byeDpiEnabled(): Preference<Boolean> = preferenceStore.getBoolean("byedpi_enabled", false)
+
+    fun byeDpiPort(): Preference<String> = preferenceStore.getString("byedpi_port", "1080")
+
+    fun byeDpiMode(): Preference<Int> = preferenceStore.getInt("byedpi_mode", 0)
+    // KMK <--
 }
